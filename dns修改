@@ -1,0 +1,123 @@
+chattr -i /etc/resolv.conf
+systemctl stop systemd-resolved
+systemctl disable systemd-resolved
+rm -f /etc/resolv.conf
+cat > /etc/resolv.conf <<EOF
+nameserver IPv4_DNS_1
+nameserver IPv4_DNS_2
+nameserver IPv4_DNS_3
+nameserver IPv4_DNS_4
+nameserver IPv6_DNS_1
+nameserver IPv6_DNS_2
+nameserver IPv6_DNS_3
+nameserver IPv6_DNS_4
+EOF
+chattr +i /etc/resolv.conf
+echo "✅ DNS 已永久设置，重启不变"
+cat /etc/resolv.conf
+
+
+
+chattr -i /etc/resolv.conf
+systemctl stop systemd-resolved
+systemctl disable systemd-resolved
+rm -f /etc/resolv.conf
+cat > /etc/resolv.conf <<EOF
+nameserver 1.1.1.1
+nameserver 1.0.0.1
+nameserver 2606:4700:4700::1111
+nameserver 2606:4700:4700::1001
+EOF
+chattr +i /etc/resolv.conf
+echo "DNS 已永久锁定 ✅"
+cat /etc/resolv.conf
+
+
+
+
+chattr -i /etc/resolv.conf
+systemctl stop systemd-resolved
+systemctl disable systemd-resolved
+rm -rf /etc/resolv.conf
+cat > /etc/resolv.conf << EOF
+nameserver 1.1.1.1
+nameserver 1.0.0.1
+nameserver 2606:4700:4700::1111
+nameserver 2606:4700:4700::1001
+EOF
+chattr +i /etc/resolv.conf
+echo "====================================="
+echo "✅ DNS 已永久设置，重启不会被覆盖！"
+echo "====================================="
+cat /etc/resolv.conf
+
+
+
+systemctl stop systemd-resolved
+systemctl disable systemd-resolved
+rm -f /etc/resolv.conf
+cat > /etc/resolv.conf << EOF
+nameserver 1.1.1.1
+nameserver 1.0.0.1
+nameserver 2606:4700:4700::1111
+nameserver 2606:4700:4700::1001
+EOF
+chattr +i /etc/resolv.conf
+echo "✅ 自定义 DNS 已永久锁定，重启 VPS 依然生效"
+cat /etc/resolv.conf
+
+
+
+rm -f /etc/resolv.conf
+echo "nameserver 1.1.1.1
+nameserver 1.0.0.1
+nameserver 2606:4700:4700::1111
+nameserver 2606:4700:4700::1001" > /etc/resolv.conf
+chattr +i /etc/resolv.conf
+systemctl stop systemd-resolved
+systemctl disable systemd-resolved
+echo "DNS 已永久锁定，重启不会改变 ✅"
+
+
+
+chattr -i /etc/resolv.conf
+nmcli device modify $(nmcli -t device status | grep connected | head -n1 | cut -d: -f1) ipv4.dns "1.1.1.1 1.0.0.1" ipv6.dns "2606:4700:4700::1111,2606:4700:4700::1001" ipv4.ignore-auto-dns yes ipv6.ignore-auto-dns yes
+nmcli connection reload
+systemctl restart NetworkManager
+cat > /etc/resolv.conf <<EOF
+nameserver 1.1.1.1
+nameserver 1.0.0.1
+nameserver 2606:4700:4700::1111
+nameserver 2606:4700:4700::1001
+EOF
+chattr +i /etc/resolv.conf
+echo "CentOS DNS 已永久设置 ✅"
+cat /etc/resolv.conf
+
+
+chattr -i /etc/resolv.conf
+nmcli device modify $(nmcli -t device status | grep connected | head -n1 | cut -d: -f1) \
+ipv4.dns "IPv4_DNS_1 IPv4_DNS_2 IPv4_DNS_3 IPv4_DNS_4" \
+ipv6.dns "IPv6_DNS_1,IPv6_DNS_2,IPv6_DNS_3,IPv6_DNS_4" \
+ipv4.ignore-auto-dns yes \
+ipv6.ignore-auto-dns yes
+nmcli connection reload
+systemctl restart NetworkManager
+cat > /etc/resolv.conf <<EOF
+nameserver IPv4_DNS_1
+nameserver IPv4_DNS_2
+nameserver IPv4_DNS_3
+nameserver IPv4_DNS_4
+nameserver IPv6_DNS_1
+nameserver IPv6_DNS_2
+nameserver IPv6_DNS_3
+nameserver IPv6_DNS_4
+EOF
+chattr +i /etc/resolv.conf
+echo "✅ CentOS DNS 已永久设置"
+cat /etc/resolv.conf
+
+
+
+
+
