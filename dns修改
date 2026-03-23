@@ -211,3 +211,104 @@ cat /etc/resolv.conf
 echo -e "\n🔍 测试解析："
 ping -c 2 google.com
 
+
+
+
+
+
+
+
+#!/bin/bash
+
+# 1. 解锁并清空错误配置
+chattr -i /etc/resolv.conf 2>/dev/null
+rm -f /etc/resolv.conf
+
+# 2. 写入你测速最快的 4 个 DNS（按延迟排序）
+cat > /etc/resolv.conf <<EOF
+nameserver 1.0.0.1
+nameserver 1.1.1.1
+nameserver 8.8.4.4
+nameserver 8.8.8.8
+EOF
+
+# 3. 锁定文件，防止被修改
+chattr +i /etc/resolv.conf
+
+# 4. 温和禁用 systemd-resolved
+systemctl stop systemd-resolved
+systemctl disable systemd-resolved
+
+# 5. 防止 NetworkManager 覆盖
+if command -v nmcli &> /dev/null; then
+    mkdir -p /etc/NetworkManager/conf.d
+    cat > /etc/NetworkManager/conf.d/90-dns-none.conf <<EOF2
+[main]
+dns=none
+rc-manager=unmanaged
+EOF2
+    systemctl reload NetworkManager
+fi
+
+echo "✅ DNS 已永久锁定，当前配置："
+cat /etc/resolv.conf
+
+
+
+
+
+
+
+
+#!/bin/bash
+
+# 完整 DNS 列表（包含 Cloudflare / Google / OpenDNS / AdGuard 等）
+DNS_LIST=(
+  # Cloudflare DNS
+  "1.1.1.1"
+  "1.0.0.1"
+  "2606:4700:4700::1111"
+  "2606:4700:4700::1001"
+  # Google DNS
+  "8.8.8.8"
+  "8.8.4.4"
+  "2001:4860:4860::8888"
+  "2001:4860:4860::8844"
+  # OpenDNS
+  "208.67.222.222"
+  "208.67.220.220"
+  # Yandex DNS
+  "77.88.8.1"
+  "77.88.8.8"
+  # Comodo DNS
+  "8.26.56.26"
+  "8.20.247.20"
+  # AdGuard DNS
+  "94.140.14.14"
+  "94.140.15.15"
+  "2a10:50c0::ad1:ff"
+  "2a10:50c0::ad2:ff"
+  # 之前你测速过的 DNS
+  "95.85.95.85"
+  "2.56.220.2"
+  "2a03:90c0:999d::1"
+  "2a03:90c0:9992::1"
+)
+
+test_dns() {
+  local dns="$1"
+  local delay=$(ping -c 3 -W 2 "$dns" 2>/dev/null | awk -F'/' 'END{print $5}')
+  [[ -z "$delay" ]] && delay="9999"
+  echo "$delay $dns"
+}
+
+echo "🔍 正在测速所有 DNS，请稍候..."
+echo "========================================"
+
+for dns in "${DNS_LIST[@]}"; do
+  test_dns "$dns"
+done | sort -n
+
+echo "========================================"
+echo "✅ 测速完成（数值越小越快），未修改任何系统配置！"
+
